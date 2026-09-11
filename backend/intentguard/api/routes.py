@@ -10,7 +10,7 @@ from decimal import Decimal
 from fastapi import APIRouter, Depends, Request
 from fastapi.responses import StreamingResponse
 
-from intentguard.api.auth import AuthContext, get_admin, get_agent_role, get_auth, resolve_auth
+from intentguard.api.auth import AuthContext, get_admin, get_agent_role, get_auth
 from intentguard.api.schemas import (
     AgentCreate,
     ApprovalAction,
@@ -23,7 +23,7 @@ from intentguard.api.schemas import (
     SessionCreate,
 )
 from intentguard.core.enums import ApprovalStatus
-from intentguard.core.errors import NotFoundError
+from intentguard.core.errors import NotFoundError, PermissionDeniedError
 from intentguard.core.schemas import Observation, PolicyRule
 
 router = APIRouter(prefix="/api/v1")
@@ -257,9 +257,25 @@ def run_benchmark(body: BenchmarkRun, request: Request, auth: AuthContext = Depe
 # --------------------------------------------------------------------- #
 
 
+@router.post("/events/token")
+def issue_stream_token(request: Request, auth: AuthContext = Depends(get_auth)):
+    """Exchange the API key (header-based, never logged) for a single-use,
+    60-second stream token. EventSource cannot set headers; a raw key in the
+    query string would leak into access/proxy logs — the token is worthless
+    beyond one stream connection."""
+    broker = request.app.state.stream_tokens
+    token = broker.issue(auth.org_id, auth.role)
+    return {"stream_token": token, "expires_in": broker.TTL_SECONDS}
+
+
 @router.get("/events/stream")
-async def event_stream(request: Request, api_key: str | None = None):
-    resolve_auth(request, query_key=api_key)
+async def event_stream(request: Request, stream_token: str | None = None):
+    if not stream_token:
+        raise PermissionDeniedError("stream_token required (POST /api/v1/events/token)")
+    resolved = request.app.state.stream_tokens.redeem(stream_token)
+    if resolved is None:
+        raise PermissionDeniedError("invalid or expired stream token")
+    org_id, _role = resolved
     engine = engine_of(request)
     q = engine.events.subscribe()
 
@@ -273,6 +289,13 @@ async def event_stream(request: Request, api_key: str | None = None):
                     event = await asyncio.to_thread(q.get, True, 15)
                 except queue_mod.Empty:
                     yield ": keepalive\n\n"
+                    continue
+                # stream is tenant-scoped: drop events from other orgs
+                decision_org = (
+                    (event.get("decision") or {}).get("org_id")
+                    or (event.get("approval") or {}).get("org_id")
+                )
+                if decision_org is not None and decision_org != org_id:
                     continue
                 yield f"data: {json.dumps(event, separators=(',', ':'))}\n\n"
         finally:

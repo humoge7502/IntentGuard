@@ -17,6 +17,7 @@ from __future__ import annotations
 
 import base64
 import threading
+import time
 
 from intentguard.core.canonical import canonical_dumps, sha256_hex
 from intentguard.core.schemas import AuditEvent, utcnow
@@ -36,28 +37,44 @@ class AuditChain:
             self._key = Ed25519PrivateKey.from_private_bytes(base64.b64decode(signing_key_b64))
 
     def append(self, org_id: str, event_type: str, payload: dict) -> AuditEvent:
-        with self._lock:
-            head = self._store.get_audit_head(org_id)
-            seq = head.seq + 1 if head else 1
-            prev_hash = head.hash if head else GENESIS_HASH
-            created_at = utcnow()
-            material = f"{prev_hash}|{seq}|{created_at.isoformat()}|{canonical_dumps(payload)}"
-            event_hash = sha256_hex(material)
-            signature = None
-            if self._key is not None:
-                signature = base64.b64encode(self._key.sign(material.encode("utf-8"))).decode("ascii")
-            event = AuditEvent(
-                seq=seq,
-                org_id=org_id,
-                event_type=event_type,
-                payload=payload,
-                prev_hash=prev_hash,
-                hash=event_hash,
-                signature=signature,
-                created_at=created_at,
-            )
-            self._store.append_audit_event(event)
-            return event
+        """Append one event. Concurrent appenders can read the same head and
+        compute the same seq; the (org_id, seq) unique index rejects the loser,
+        which retries against the refreshed head instead of failing the
+        enforcement path."""
+        last_error: Exception | None = None
+        for attempt in range(4):
+            with self._lock:
+                head = self._store.get_audit_head(org_id)
+                seq = head.seq + 1 if head else 1
+                prev_hash = head.hash if head else GENESIS_HASH
+                created_at = utcnow()
+                material = f"{prev_hash}|{seq}|{created_at.isoformat()}|{canonical_dumps(payload)}"
+                event_hash = sha256_hex(material)
+                signature = None
+                if self._key is not None:
+                    signature = base64.b64encode(self._key.sign(material.encode("utf-8"))).decode("ascii")
+                event = AuditEvent(
+                    seq=seq,
+                    org_id=org_id,
+                    event_type=event_type,
+                    payload=payload,
+                    prev_hash=prev_hash,
+                    hash=event_hash,
+                    signature=signature,
+                    created_at=created_at,
+                )
+                try:
+                    self._store.append_audit_event(event)
+                    return event
+                except Exception as exc:  # noqa: BLE001 — narrowed below
+                    from sqlalchemy.exc import IntegrityError
+
+                    if not isinstance(exc, IntegrityError):
+                        raise
+                    last_error = exc
+            # head moved under us: brief backoff, then re-read and recompute
+            time.sleep(0.005 * (attempt + 1))
+        raise RuntimeError(f"audit chain append failed after retries for org {org_id}") from last_error
 
     def verify(self, org_id: str) -> dict:
         events = self._store.list_audit_events(org_id, limit=1_000_000)

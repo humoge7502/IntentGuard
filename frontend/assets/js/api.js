@@ -56,10 +56,19 @@ export const api = {
   post: (path, body) => request("POST", path, body ?? {}),
 };
 
-/* Server-sent events stream for live firewall decisions. */
-export function openEventStream(onEvent, onStatus) {
-  const key = getKey();
-  const source = new EventSource(`/api/v1/events/stream${key ? `?api_key=${encodeURIComponent(key)}` : ""}`);
+/* Server-sent events stream for live firewall decisions.
+   The API key never goes in a URL: we exchange it (header-authenticated) for
+   a single-use, 60-second stream token first. */
+export async function openEventStream(onEvent, onStatus) {
+  let token;
+  try {
+    const data = await request("POST", "/api/v1/events/token");
+    token = data.stream_token;
+  } catch (err) {
+    onStatus?.("error");
+    return () => {};
+  }
+  const source = new EventSource(`/api/v1/events/stream?stream_token=${encodeURIComponent(token)}`);
   source.onopen = () => onStatus?.("live");
   source.onerror = () => onStatus?.("error");
   source.onmessage = (message) => {

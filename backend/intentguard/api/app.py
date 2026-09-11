@@ -1,10 +1,13 @@
 """FastAPI application factory."""
 from __future__ import annotations
 
+import logging
 import sys
 import time
+import uuid
 from collections import defaultdict, deque
 from pathlib import Path
+from typing import Any
 
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
@@ -42,7 +45,13 @@ SECURITY_HEADERS = {
 
 
 class RateLimiter:
-    """In-memory sliding window per API key (MVP; use Redis in production)."""
+    """In-memory sliding window per API key (MVP; use Redis in production).
+
+    The key map is capped: unauthenticated garbage must not grow memory
+    without bound (BUG-006 fix).
+    """
+
+    MAX_KEYS = 10_000
 
     def __init__(self, per_minute: int) -> None:
         self.per_minute = per_minute
@@ -50,12 +59,124 @@ class RateLimiter:
 
     def check(self, key: str) -> None:
         now = time.monotonic()
+        if len(self._hits) >= self.MAX_KEYS and key not in self._hits:
+            # evict oldest-inserted entries (dicts preserve insertion order)
+            excess = len(self._hits) - self.MAX_KEYS + 1
+            for oldest in list(self._hits.keys())[:excess]:
+                self._hits.pop(oldest, None)
         hits = self._hits[key]
         while hits and now - hits[0] > 60:
             hits.popleft()
         if len(hits) >= self.per_minute:
             raise RateLimitError("rate limit exceeded")
         hits.append(now)
+
+
+class StreamTokenBroker:
+    """Single-use, short-TTL tokens for the SSE endpoint.
+
+    Browsers' EventSource cannot set headers, but a raw API key in the URL
+    leaks into access/proxy logs (BUG-005). Instead, an authenticated client
+    exchanges its key for a single-use stream token that is worthless beyond
+    one stream connection for 60 seconds. In-memory by design: tokens die
+    with the process, so rotating processes invalidates nothing durable.
+    """
+
+    TTL_SECONDS = 60
+
+    def __init__(self) -> None:
+        import secrets as _secrets
+
+        self._secrets = _secrets
+        self._tokens: dict[str, tuple[str, str, float]] = {}  # token -> (org, role, expires)
+
+    def issue(self, org_id: str, role: str) -> str:
+        token = "st_" + self._secrets.token_urlsafe(24)
+        self._tokens[token] = (org_id, role, time.monotonic() + self.TTL_SECONDS)
+        return token
+
+    def redeem(self, token: str) -> tuple[str, str] | None:
+        record = self._tokens.pop(token, None)  # single use
+        if record is None:
+            return None
+        org_id, role, expires = record
+        if time.monotonic() > expires:
+            return None
+        return org_id, role
+
+
+class RequestContextMiddleware:
+    """Pure ASGI middleware: rate limiting, request IDs, access logs, and
+    security headers. Pure ASGI (not BaseHTTPMiddleware) because the SSE
+    endpoint streams forever — body-wrapping middleware deadlocks on it."""
+
+    def __init__(self, app: Any, rate_limiter: RateLimiter, logger: logging.Logger) -> None:
+        self.app = app
+        self.rate_limiter = rate_limiter
+        self.logger = logger
+
+    async def __call__(self, scope: Any, receive: Any, send: Any) -> None:
+        if scope["type"] != "http":
+            await self.app(scope, receive, send)
+            return
+        path = scope.get("path", "")
+        request_id = uuid.uuid4().hex[:12]
+        started = time.perf_counter()
+
+        async def send_wrapper(message: Any) -> None:
+            if message["type"] == "http.response.start":
+                headers = list(message.get("headers", []))
+                headers.append((b"x-request-id", request_id.encode()))
+                for header, value in SECURITY_HEADERS.items():
+                    key = header.encode()
+                    if not any(k == key for k, _ in headers):
+                        headers.append((key, value.encode()))
+                message = {**message, "headers": headers}
+            await send(message)
+
+        if path.startswith("/api/"):
+            headers = {k.decode("latin-1").lower(): v.decode("latin-1") for k, v in scope.get("headers", [])}
+            key = headers.get("authorization") or headers.get("x-api-key") or "anon"
+            try:
+                self.rate_limiter.check(key[:72])
+            except RateLimitError:
+                message = b'{"error":"RATE_LIMITED","message":"rate limit exceeded"}'
+                await send_wrapper(
+                    {
+                        "type": "http.response.start",
+                        "status": 429,
+                        "headers": [(b"content-type", b"application/json"),
+                                    (b"content-length", str(len(message)).encode())],
+                    }
+                )
+                await send({"type": "http.response.body", "body": message})
+                return
+
+        status_holder = {"status": 500}
+        original_send = send_wrapper
+
+        async def status_capture(message: Any) -> None:
+            if message["type"] == "http.response.start":
+                status_holder["status"] = message.get("status", 500)
+            await original_send(message)
+
+        try:
+            await self.app(scope, receive, status_capture)
+        except Exception:
+            self.logger.exception(
+                "unhandled error request_id=%s path=%s", request_id, path
+            )
+            raise
+        finally:
+            # path only — never the query string (stream tokens must not reach logs)
+            self.logger.info(
+                "request_id=%s method=%s path=%s status=%s duration_ms=%.1f",
+                request_id,
+                scope.get("method", ""),
+                path,
+                status_holder["status"],
+                (time.perf_counter() - started) * 1000,
+            )
 
 
 def create_app(engine: IntentGuardEngine | None = None, settings: Settings | None = None) -> FastAPI:
@@ -77,6 +198,7 @@ def create_app(engine: IntentGuardEngine | None = None, settings: Settings | Non
     app.state.engine = engine
     app.state.settings = settings
     app.state.rate_limiter = RateLimiter(settings.rate_limit_per_min)
+    app.state.stream_tokens = StreamTokenBroker()
     app.include_router(router)
 
     app.add_middleware(
@@ -87,18 +209,18 @@ def create_app(engine: IntentGuardEngine | None = None, settings: Settings | Non
         allow_headers=["Authorization", "X-API-Key", "Content-Type"],
     )
 
-    @app.middleware("http")
-    async def security_and_rate_limit(request: Request, call_next):
-        try:
-            if request.url.path.startswith("/api/"):
-                key = request.headers.get("authorization") or request.headers.get("x-api-key") or "anon"
-                app.state.rate_limiter.check(key[:72])
-            response = await call_next(request)
-        except Exception:
-            raise
-        for header, value in SECURITY_HEADERS.items():
-            response.headers.setdefault(header, value)
-        return response
+    logger = logging.getLogger("intentguard.http")
+
+    # Pure ASGI middleware — deliberately NOT @app.middleware("http")
+    # (BaseHTTPMiddleware wraps the response body stream, which deadlocks
+    # infinite SSE responses). Adds: rate limiting, request IDs, structured
+    # access logs (path only — never the query string, so stream tokens and
+    # any future query credentials cannot reach logs), security headers.
+    app.add_middleware(
+        RequestContextMiddleware,
+        rate_limiter=app.state.rate_limiter,
+        logger=logger,
+    )
 
     @app.exception_handler(IntentGuardError)
     async def domain_error_handler(request: Request, exc: IntentGuardError):

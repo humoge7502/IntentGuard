@@ -347,11 +347,25 @@ def _dumps(value: Any) -> str:
 class SqlStore(IntentGuardStore):
     def __init__(self, url: str = "sqlite:///./data/intentguard.db") -> None:
         kwargs: dict[str, Any] = {"future": True}
+        is_memory = url in ("sqlite://", "sqlite:///:memory:")
         if url.startswith("sqlite"):
-            kwargs["connect_args"] = {"check_same_thread": False}
-            if url in ("sqlite://", "sqlite:///:memory:"):
+            kwargs["connect_args"] = {"check_same_thread": False, "timeout": 30}
+            if is_memory:
                 kwargs["poolclass"] = StaticPool
         self.engine: Engine = create_engine(url, **kwargs)
+        if url.startswith("sqlite") and not is_memory:
+            # WAL lets dashboard reads proceed while benchmark/demo writes run;
+            # busy_timeout turns lock contention into a wait instead of a 500.
+            from sqlalchemy import event
+
+            @event.listens_for(self.engine, "connect")
+            def _sqlite_pragmas(dbapi_connection: Any, _record: Any) -> None:
+                cursor = dbapi_connection.cursor()
+                cursor.execute("PRAGMA journal_mode=WAL")
+                cursor.execute("PRAGMA busy_timeout=30000")
+                cursor.execute("PRAGMA synchronous=NORMAL")
+                cursor.close()
+
         meta.create_all(self.engine)
 
     # -- serialization helpers ---------------------------------------------
@@ -710,20 +724,35 @@ class SqlStore(IntentGuardStore):
         return [self._model_from_row(AuditEvent, row, columns) for row in rows]
 
     # -- executions ----------------------------------------------------------------------------------
-    def record_execution(self, org_id: str, decision_id: str, action_digest: str, summary: dict) -> None:
+    def claim_execution(
+        self, org_id: str, decision_id: str, action_digest: str, session_id: str, summary: dict
+    ) -> bool:
+        """Atomic claim keyed on decision_id. False => already claimed/executed."""
+        from sqlalchemy.exc import IntegrityError
+
+        try:
+            with self.engine.begin() as conn:
+                conn.execute(
+                    insert(_t_executions).values(
+                        decision_id=decision_id,
+                        org_id=org_id,
+                        session_id=session_id,
+                        action_digest=action_digest,
+                        summary_json=_dumps(summary),
+                        created_at=utcnow().isoformat(),
+                    )
+                )
+            return True
+        except IntegrityError:
+            return False
+
+    def complete_execution(self, org_id: str, decision_id: str, summary: dict) -> None:
         with self.engine.begin() as conn:
             conn.execute(
-                delete(_t_executions).where(_t_executions.c.decision_id == decision_id)
-            )
-            conn.execute(
-                insert(_t_executions).values(
-                    decision_id=decision_id,
-                    org_id=org_id,
-                    session_id=str(summary.get("session_id", "")),
-                    action_digest=action_digest,
-                    summary_json=_dumps(summary),
-                    created_at=utcnow().isoformat(),
-                )
+                _t_executions.update()
+                .where(_t_executions.c.decision_id == decision_id)
+                .where(_t_executions.c.org_id == org_id)
+                .values(summary_json=_dumps(summary))
             )
 
     def get_execution(self, org_id: str, decision_id: str) -> dict | None:

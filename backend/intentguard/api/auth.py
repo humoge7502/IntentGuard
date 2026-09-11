@@ -42,6 +42,7 @@ def _extract_key(request: Request, query_key: str | None = None) -> str:
     raise PermissionDeniedError("missing API key (Authorization: Bearer or X-API-Key)")
 
 
+# query_key retained for backwards compatibility in tests; production SSE uses single-use stream tokens
 def resolve_auth(request: Request, query_key: str | None = None):
     engine = request.app.state.engine
     plaintext = _extract_key(request, query_key)

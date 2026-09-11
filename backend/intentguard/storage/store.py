@@ -149,10 +149,16 @@ class IntentGuardStore(ABC):
     def list_trajectory(self, org_id: str, session_id: str) -> list[TrajectoryStep]: ...
 
     # --- executions (idempotency of side effects + replay detection) ----------------------------
+    # Claim-then-complete: the claim is an atomic INSERT keyed on decision_id,
+    # so concurrent executions of the same decision cannot both proceed. A
+    # claimed-but-incomplete execution already blocks replay (conservative).
     @abstractmethod
-    def record_execution(
-        self, org_id: str, decision_id: str, action_digest: str, summary: dict
-    ) -> None: ...
+    def claim_execution(
+        self, org_id: str, decision_id: str, action_digest: str, session_id: str, summary: dict
+    ) -> bool: ...
+
+    @abstractmethod
+    def complete_execution(self, org_id: str, decision_id: str, summary: dict) -> None: ...
 
     @abstractmethod
     def get_execution(self, org_id: str, decision_id: str) -> dict | None: ...

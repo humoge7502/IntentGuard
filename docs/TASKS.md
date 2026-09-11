@@ -3,6 +3,33 @@
 Statuses: DONE (verified by tests or a recorded run) · PARTIAL (implemented
 with named gaps) · BLOCKED (external blocker documented) · TODO.
 
+## Round-2 independent audit (2026-09-12) — see docs/AUDIT.md
+
+- [x] DONE BUG-001 audit-chain write race → retry + concurrency tests
+- [x] DONE BUG-002 double-execution race → claim-then-complete + race test
+- [x] DONE BUG-003 pending-approvals metric miscount → fixed + test
+- [x] DONE BUG-004 SQLite WAL/busy-timeout → fixed + test
+- [x] DONE BUG-005 API key in SSE URLs → single-use stream tokens, frontend
+      migrated, access logs no longer record query strings
+- [x] DONE BUG-006 unbounded rate-limiter memory → capped + test
+- [x] DONE Pure-ASGI request middleware (request IDs, structured logs,
+      security headers) replacing BaseHTTPMiddleware
+- [x] DONE Mobile viewport polish (≤480px), 390px visually verified
+- [x] DONE TestClient infinite-stream environment limitation documented
+
+## Technical debt register (post round-2)
+
+| ID | Debt | Class | Risk | Effort | Priority |
+|---|---|---|---|---|---|
+| TD-1 | In-memory rate limiter + stream tokens are per-process (multi-replica needs Redis) | strategic | availability/consistency at scale | M | MEDIUM |
+| TD-2 | TEXT-typed timestamps/decimals in SQLite schema; no Alembic | strategic | schema hardening for Postgres prod | M | MEDIUM |
+| TD-3 | Deterministic compiler coverage is narrow (safe direction, but needs intent-review UX for high-value goals) | acceptable | false-negatives in parsing escalate, never allow | L | MEDIUM |
+| TD-4 | Audit chain is tamper-evident, not immutable (no external anchoring) | strategic | full-store attacker can rewrite history | M | MEDIUM |
+| TD-5 | AttackBench scenario count 208 (distinct parameterizations; padding rejected) | acceptable | breadth vs honesty trade-off, documented | S | LOW |
+| TD-6 | No automated a11y/E2E suite in CI; browser QA is manual (recorded) | strategic | regression risk on frontend changes | M | MEDIUM |
+| TD-7 | starlette 1.6 TestClient cannot test infinite streams in-process | acceptable | SSE covered live + unit-level only | S | LOW |
+| TD-8 | No request-id propagation into log correlation systems (ids emitted, no collector) | cosmetic | ops tooling | S | LOW |
+
 ## Final acceptance audit — 2026-09-12
 
 ### Phase 0–5: foundations

@@ -15,7 +15,7 @@ from intentguard.approvals.service import ApprovalService
 from intentguard.audit.chain import AuditChain
 from intentguard.capabilities.manager import CapabilityManager
 from intentguard.config import Settings
-from intentguard.core.enums import Decision
+from intentguard.core.enums import ApprovalStatus, Decision
 from intentguard.core.errors import ConflictError, NotFoundError, ValidationError
 from intentguard.core.schemas import (
     ActionProposal,
@@ -210,8 +210,10 @@ class IntentGuardEngine:
     def execute(self, org_id: str, decision_id: str) -> ToolResult:
         """Execute an ALLOWed decision through the trusted tool adapter.
 
-        Execution is idempotent per decision: a decision can drive at most one
-        side effect, ever.
+        Execution is idempotent per decision via an atomic claim: the first
+        caller owns the side effect; concurrent callers of the same decision
+        get ConflictError. A claimed-but-failed execution stays consumed —
+        the agent must re-propose rather than retry blindly.
         """
         decision = self.store.get_decision(org_id, decision_id)
         if decision is None:
@@ -220,10 +222,26 @@ class IntentGuardEngine:
             raise ConflictError(
                 f"decision is {decision.decision.value}; only ALLOW decisions may execute"
             )
-        if self.store.get_execution(org_id, decision_id) is not None:
-            raise ConflictError("decision already executed")
+        tool_name = self._tool_of(decision)
+        operation = self._operation_of(decision)
+        claimed = self.store.claim_execution(
+            org_id,
+            decision_id,
+            decision.action_digest,
+            decision.session_id,
+            {
+                "tool": tool_name,
+                "operation": operation,
+                "ok": False,
+                "error": "in flight",
+                "session_id": decision.session_id,
+                "agent_id": decision.agent_id,
+            },
+        )
+        if not claimed:
+            raise ConflictError("decision already executed or execution in flight")
 
-        tool = self.registry.require(self._tool_of(decision))
+        tool = self.registry.require(tool_name)
         session = self.store.get_session(org_id, decision.session_id)
         ctx = ExecutionContext(
             org_id=org_id,
@@ -231,17 +249,30 @@ class IntentGuardEngine:
             agent_id=decision.agent_id,
             action_id=decision.action_id,
         )
-        params = self._params_of(decision)
-        result = tool.execute(
-            self._operation_of(decision), params, ctx
-        )
-        self.store.record_execution(
+        try:
+            result = tool.execute(operation, self._params_of(decision), ctx)
+        except Exception as exc:
+            # the claim is consumed: this decision can never drive a side effect
+            self.store.complete_execution(
+                org_id,
+                decision_id,
+                {
+                    "tool": tool_name,
+                    "operation": operation,
+                    "ok": False,
+                    "error": f"{type(exc).__name__}: {exc}",
+                    "session_id": decision.session_id,
+                    "agent_id": decision.agent_id,
+                },
+            )
+            raise
+
+        self.store.complete_execution(
             org_id,
             decision_id,
-            decision.action_digest,
             {
                 "tool": tool.name,
-                "operation": self._operation_of(decision),
+                "operation": operation,
                 "ok": result.ok,
                 "error": result.error,
                 "session_id": decision.session_id,
@@ -254,7 +285,7 @@ class IntentGuardEngine:
             {
                 "decision_id": decision_id,
                 "tool": tool.name,
-                "operation": self._operation_of(decision),
+                "operation": operation,
                 "ok": result.ok,
             },
         )
@@ -345,7 +376,7 @@ class IntentGuardEngine:
             "allowed": counts.get("allow", 0),
             "blocked": counts.get("block", 0),
             "escalated": counts.get("escalate", 0),
-            "pending_approvals": len(self.store.list_approvals(org_id, None)),
+            "pending_approvals": len(self.store.list_approvals(org_id, ApprovalStatus.PENDING)),
         }
 
     def verify_audit(self, org_id: str) -> dict[str, Any]:

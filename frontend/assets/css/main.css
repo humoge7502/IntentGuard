@@ -343,4 +343,13 @@ pre.codeblock {
   .nav-group { display: contents; }
   .nav-heading { display: none; }
   .outlet { padding: var(--sp-4); }
+  .topbar { padding: var(--sp-3) var(--sp-4); }
+}
+
+@media (max-width: 480px) {
+  .topbar { flex-wrap: wrap; gap: var(--sp-2); }
+  .topbar-title { min-width: 0; }
+  .topbar h1 { font-size: var(--fs-16); }
+  .brand { padding: var(--sp-3) var(--sp-4); }
+  .modal { padding: var(--sp-4); }
 }

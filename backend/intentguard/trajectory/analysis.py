@@ -49,8 +49,8 @@ class TrajectoryAnalyzer:
         result = TrajectoryResult()
         steps = self._store.list_trajectory(org_id, session_id)
 
-        # Replay: this exact action was already allowed and executed.
-        if self._store.find_allowed_digest(org_id, session_id, action_digest):
+        # Replay: this exact action was already executed in this session.
+        if self._store.find_executed_digest(org_id, session_id, action_digest):
             result.hard_reasons.append("REPLAY_SUSPECTED")
 
         # Credential-harvest pattern: credential-phishing content was read,

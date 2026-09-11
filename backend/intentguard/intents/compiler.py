@@ -73,7 +73,7 @@ _VERB_OPS = [
     (r"\bpays?\b", "transfer"),
     (r"\bemail(s|ing)?\b|\bsend\b", "send_email"),
     (r"\bbalance\b", "get_balance"),
-    (r"\bresearch(ing)? online\b|\bweb\b", "fetch_page"),
+    (r"\bresearch(ing)?\b|\bonline\b", "fetch_page"),
 ]
 
 _UNSAFE_VERBS = [
@@ -193,9 +193,8 @@ class RuleBasedIntentCompiler:
         if is_purchase:
             # implicit research pipeline for purchase goals: reading external
             # catalogs/pages is a normal, read-only part of buying
-            for op in ("search_products", "get_product", "compare", "fetch_page"):
-                if op not in operations:
-                    operations.insert(0, op)
+            implicit = [op for op in ("search_products", "get_product", "compare", "fetch_page") if op not in operations]
+            operations = implicit + operations
 
         # ---- budget ------------------------------------------------------------
         amounts = _parse_amounts(text)

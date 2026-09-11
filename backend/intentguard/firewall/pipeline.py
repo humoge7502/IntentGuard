@@ -320,12 +320,14 @@ class ActionFirewall:
                 escalate("UNCERTAIN_NO_BUDGET")
 
         # ------------------------------------------------------------------
-        # 8) validate_context — taint from externally-read content
+        # 8) validate_context — taint from externally-read content.
+        # Runs even when earlier checks failed: taint explains WHY the action
+        # diverged and feeds risk telemetry for the trajectory record.
         # ------------------------------------------------------------------
         observations: list[Observation] = []
-        if not hard:
+        if session is not None:
             observations = list(proposal.context)
-            stored = self._store.list_observations(org, session.session_id)  # type: ignore[union-attr]
+            stored = self._store.list_observations(org, session.session_id)
             observations.extend(stored)
             observations = observations[-5:]
             if observations and any(o.contains_instruction_language for o in observations):
@@ -362,32 +364,36 @@ class ActionFirewall:
                     signal("SUSPICIOUS_IDENTITY_CLAIM", "recently read content claimed supervisory authority")
 
         # ------------------------------------------------------------------
-        # 9) validate_trajectory
+        # 9) validate_trajectory — also runs on hard-failed actions so that
+        # repeated attacking behavior degrades the session even though every
+        # individual attempt was blocked.
         # ------------------------------------------------------------------
         digest = self.action_digest(proposal)
         degrade = False
-        if not hard:
+        if session is not None:
             trajectory = self._trajectory.analyze(
-                org, session.session_id, digest, proposal.tool, observations  # type: ignore[union-attr]
+                org, session.session_id, digest, proposal.tool, observations
             )
             for reason in trajectory.hard_reasons:
                 block(reason)
             signals.extend(trajectory.signals)
             degrade = trajectory.degrade
-            if degrade and not session.degraded:  # type: ignore[union-attr]
-                session.degraded = True  # type: ignore[union-attr]
-                self._store.save_session(session)  # type: ignore[union-attr]
+            if degrade and not session.degraded:
+                session.degraded = True
+                self._store.save_session(session)
                 self._audit.append(
                     org,
                     "session.degraded",
-                    {"session_id": session.session_id, "reason": "cumulative trajectory risk"},  # type: ignore[union-attr]
+                    {"session_id": session.session_id, "reason": "cumulative trajectory risk"},
                 )
 
         # ------------------------------------------------------------------
-        # replay check (independent of trajectory rules)
+        # replay check: this exact action was already EXECUTED in this session
+        # (an allowed-but-unexecuted action may legitimately be re-proposed;
+        # execution idempotency guarantees at most one side effect)
         # ------------------------------------------------------------------
         if not hard and session is not None:
-            if self._store.find_allowed_digest(org, session.session_id, digest):
+            if self._store.find_executed_digest(org, session.session_id, digest):
                 check("replay", CheckStatus.FAIL, "identical action already authorized and executed")
                 block("REPLAY_SUSPECTED")
             else:
@@ -484,6 +490,7 @@ class ActionFirewall:
         prior_steps = self._store.list_trajectory(org, record.session_id)
         self._store.append_trajectory_step(
             TrajectoryStep(
+                org_id=org,
                 seq=len(prior_steps) + 1,
                 session_id=record.session_id,
                 action_id=record.action_id,

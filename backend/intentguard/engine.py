@@ -239,6 +239,7 @@ class IntentGuardEngine:
         self.store.record_execution(
             org_id,
             decision_id,
+            decision.action_digest,
             {
                 "tool": tool.name,
                 "operation": self._operation_of(decision),

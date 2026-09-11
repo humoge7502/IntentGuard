@@ -211,6 +211,8 @@ _t_executions = Table(
     "executions", meta,
     Column("decision_id", String, primary_key=True),
     Column("org_id", String, index=True),
+    Column("session_id", String, index=True),
+    Column("action_digest", String, index=True),
     Column("summary_json", String),
     Column("created_at", String),
 )
@@ -687,7 +689,7 @@ class SqlStore(IntentGuardStore):
         return [self._model_from_row(AuditEvent, row, columns) for row in rows]
 
     # -- executions ----------------------------------------------------------------------------------
-    def record_execution(self, org_id: str, decision_id: str, summary: dict) -> None:
+    def record_execution(self, org_id: str, decision_id: str, action_digest: str, summary: dict) -> None:
         with self.engine.begin() as conn:
             conn.execute(
                 delete(_t_executions).where(_t_executions.c.decision_id == decision_id)
@@ -696,6 +698,8 @@ class SqlStore(IntentGuardStore):
                 insert(_t_executions).values(
                     decision_id=decision_id,
                     org_id=org_id,
+                    session_id=str(summary.get("session_id", "")),
+                    action_digest=action_digest,
                     summary_json=_dumps(summary),
                     created_at=utcnow().isoformat(),
                 )
@@ -711,6 +715,17 @@ class SqlStore(IntentGuardStore):
         if row is None:
             return None
         return json.loads(row.summary_json)
+
+    def find_executed_digest(self, org_id: str, session_id: str, action_digest: str) -> bool:
+        with self.engine.connect() as conn:
+            row = conn.execute(
+                select(_t_executions.c.decision_id)
+                .where(_t_executions.c.org_id == org_id)
+                .where(_t_executions.c.session_id == session_id)
+                .where(_t_executions.c.action_digest == action_digest)
+                .limit(1)
+            ).first()
+        return row is not None
 
     # -- metrics ------------------------------------------------------------------------------------------
     def decision_counts(self, org_id: str) -> dict[str, int]:

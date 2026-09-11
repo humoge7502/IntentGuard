@@ -140,12 +140,17 @@ class IntentGuardStore(ABC):
     @abstractmethod
     def list_trajectory(self, org_id: str, session_id: str) -> list[TrajectoryStep]: ...
 
-    # --- executions (idempotency of side effects) ---------------------------------------------
+    # --- executions (idempotency of side effects + replay detection) ----------------------------
     @abstractmethod
-    def record_execution(self, org_id: str, decision_id: str, summary: dict) -> None: ...
+    def record_execution(
+        self, org_id: str, decision_id: str, action_digest: str, summary: dict
+    ) -> None: ...
 
     @abstractmethod
     def get_execution(self, org_id: str, decision_id: str) -> dict | None: ...
+
+    @abstractmethod
+    def find_executed_digest(self, org_id: str, session_id: str, action_digest: str) -> bool: ...
 
 
     @abstractmethod

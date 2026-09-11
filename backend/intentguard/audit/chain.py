@@ -32,12 +32,7 @@ class AuditChain:
         self._key = None
         if signing_key_b64:
             from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
-            from cryptography.hazmat.primitives.serialization import (
-                Encoding,
-                NoEncryption,
-                PrivateFormat,
-            )
-            del Encoding, NoEncryption, PrivateFormat  # only needed for keygen elsewhere
+
             self._key = Ed25519PrivateKey.from_private_bytes(base64.b64decode(signing_key_b64))
 
     def append(self, org_id: str, event_type: str, payload: dict) -> AuditEvent:
@@ -73,7 +68,7 @@ class AuditChain:
                 return {"valid": False, "events": len(events), "broken_at_seq": event.seq}
             if self._key is not None and event.signature is not None:
                 try:
-                    self._key.verify(
+                    self._key.public_key().verify(
                         base64.b64decode(event.signature), material.encode("utf-8")
                     )
                 except Exception:

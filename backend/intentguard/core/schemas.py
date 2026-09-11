@@ -359,6 +359,7 @@ class AuditEvent(IGBaseModel):
 
 
 class TrajectoryStep(IGBaseModel):
+    org_id: str
     seq: int
     session_id: str
     action_id: str

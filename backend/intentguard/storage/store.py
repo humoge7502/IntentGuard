@@ -35,6 +35,9 @@ class IntentGuardStore(ABC):
     @abstractmethod
     def get_organization(self, org_id: str) -> Organization | None: ...
 
+    @abstractmethod
+    def list_organizations(self) -> list[Organization]: ...
+
     # --- principals & agents ----------------------------------------------
     @abstractmethod
     def save_principal(self, principal: Principal) -> None: ...

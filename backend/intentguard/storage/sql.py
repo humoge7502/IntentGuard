@@ -444,6 +444,12 @@ class SqlStore(IntentGuardStore):
     def get_organization(self, org_id: str) -> Organization | None:
         return self._get(Organization, _t_orgs, _t_orgs.c.org_id, org_id, None, "")
 
+    def list_organizations(self) -> list[Organization]:
+        _, columns = _SCHEMA[_t_orgs]
+        with self.engine.connect() as conn:
+            rows = conn.execute(select(_t_orgs)).all()
+        return [self._model_from_row(Organization, r, columns) for r in rows]
+
     # -- principals & agents ---------------------------------------------------
     def save_principal(self, principal: Principal) -> None:
         self._save(principal, _t_principals)

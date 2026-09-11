@@ -32,8 +32,8 @@ from intentguard.core.enums import (
 )
 from intentguard.core.schemas import (
     ActionProposal,
-    CheckResult,
     Capability,
+    CheckResult,
     DecisionRecord,
     IntentSpec,
     Observation,

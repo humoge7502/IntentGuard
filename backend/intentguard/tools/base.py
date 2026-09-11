@@ -7,7 +7,6 @@ side-effect class, parameter shape, financial exposure, and entity facts.
 """
 from __future__ import annotations
 
-from abc import ABC
 from dataclasses import dataclass, field
 from decimal import Decimal
 from typing import Any
@@ -43,7 +42,7 @@ class ToolResult:
     observation: dict[str, Any] | None = None
 
 
-class ToolAdapter(ABC):
+class ToolAdapter:
     """Base class for tool adapters.
 
     ``param_map`` maps semantic roles to parameter names so the firewall can

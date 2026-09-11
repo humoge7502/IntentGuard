@@ -481,7 +481,7 @@ FAMILIES = {
 
 def generate_all(max_per_family: int | None = None) -> list[Scenario]:
     scenarios: list[Scenario] = []
-    for name, generator in FAMILIES.items():
+    for _name, generator in FAMILIES.items():
         family_scenarios = generator(max_per_family or 10_000)
         scenarios.extend(family_scenarios)
     return scenarios

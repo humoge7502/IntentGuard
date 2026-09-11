@@ -10,7 +10,7 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 
 from intentguard.core.enums import HIGH_IMPACT_CLASSES
-from intentguard.core.schemas import Observation, RiskSignal, TrajectoryStep, utcnow
+from intentguard.core.schemas import Observation, RiskSignal
 from intentguard.storage.store import IntentGuardStore
 
 # Tools whose operations are meaningful targets after credential-harvest content

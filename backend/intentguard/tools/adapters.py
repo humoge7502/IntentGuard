@@ -8,7 +8,6 @@ the real integrations phase replaces adapters, not the firewall.
 from __future__ import annotations
 
 import random
-from decimal import Decimal
 from typing import Any
 
 from intentguard.core.enums import SideEffectClass

@@ -23,7 +23,7 @@ class AuthContext:
     role: str
     key_id: str
 
-    def require_role(self, minimum: str) -> "AuthContext":
+    def require_role(self, minimum: str) -> AuthContext:
         if ROLE_RANK[self.role] < ROLE_RANK[minimum]:
             raise PermissionDeniedError(f"requires {minimum} role; key role is {self.role}")
         return self

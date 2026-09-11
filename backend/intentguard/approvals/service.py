@@ -34,11 +34,12 @@ class ApprovalService:
         ttl_seconds: int = DEFAULT_TTL_SECONDS,
     ) -> ApprovalRequest:
         # Idempotent: re-evaluating the same action must not spawn duplicate
-        # pending requests — one open request per (session, digest).
-        for existing in self._store.list_approvals(org_id, ApprovalStatus.PENDING):
-            if existing.session_id == session_id and existing.action_digest == action_digest:
-                if existing.expires_at is not None and existing.expires_at > utcnow():
-                    return existing
+        # pending requests — one open request per (session, digest). Scoped
+        # lookup, not a full scan of pending requests.
+        existing = self._store.find_pending_for_digest(org_id, session_id, action_digest)
+        if existing is not None:
+            if existing.expires_at is not None and existing.expires_at > utcnow():
+                return existing
         approval = ApprovalRequest(
             org_id=org_id,
             session_id=session_id,

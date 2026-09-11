@@ -1,0 +1,30 @@
+services:
+  intentguard:
+    build: .
+    ports:
+      - "8400:8400"
+    environment:
+      INTENTGUARD_STORE: ${INTENTGUARD_STORE:-sqlite}
+      INTENTGUARD_SQLITE_PATH: /data/intentguard.db
+      INTENTGUARD_RATE_LIMIT_PER_MIN: ${INTENTGUARD_RATE_LIMIT_PER_MIN:-600}
+      INTENTGUARD_AUDIT_SIGNING_KEY: ${INTENTGUARD_AUDIT_SIGNING_KEY:-}
+      INTENTGUARD_BOOTSTRAP_ADMIN: "1"
+    volumes:
+      - intentguard-data:/data
+    restart: unless-stopped
+
+  # Optional PostgreSQL backend: set INTENTGUARD_STORE=postgres and
+  # INTENTGUARD_DATABASE_URL=postgresql+psycopg://intentguard:intentguard@db:5432/intentguard
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: intentguard
+      POSTGRES_PASSWORD: intentguard
+      POSTGRES_DB: intentguard
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    profiles: ["postgres"]
+
+volumes:
+  intentguard-data:
+  pgdata:

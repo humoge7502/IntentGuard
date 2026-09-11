@@ -119,7 +119,7 @@ def run_scenario(engine, scenario: Scenario) -> ScenarioResult:
 def run_benchmark(engine, org_id: str, max_per_family: int | None = None) -> dict:
     del org_id  # each scenario gets its own tenant for isolation
     scenarios: list[Scenario] = []
-    for name, generator in FAMILIES.items():
+    for _name, generator in FAMILIES.items():
         scenarios.extend(generator(max_per_family or 10_000))
 
     results: list[ScenarioResult] = []

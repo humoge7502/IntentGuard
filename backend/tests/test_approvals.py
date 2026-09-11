@@ -42,6 +42,7 @@ def test_no_budget_purchase_escalates_then_allows_after_grant(engine, org_ctx):
 def test_denied_approval_blocks_retry_escalation(engine, org_ctx):
     org_id, principal_id = org_ctx.org.org_id, org_ctx.principal.principal_id
     agent, session = _escalating_session(engine, org_id, principal_id)
+    engine.propose(org_id, session.session_id, agent.agent_id, "shopping_api", "purchase", PARAMS)
     d = engine.propose(org_id, session.session_id, agent.agent_id, "shopping_api", "purchase", PARAMS)
     assert d.decision.value == "escalate"
     approval = engine.store.list_approvals(org_id)[0]
@@ -53,7 +54,7 @@ def test_denied_approval_blocks_retry_escalation(engine, org_ctx):
 def test_expired_approval_request(engine, org_ctx):
     org_id, principal_id = org_ctx.org.org_id, org_ctx.principal.principal_id
     agent, session = _escalating_session(engine, org_id, principal_id)
-    d = engine.propose(org_id, session.session_id, agent.agent_id, "shopping_api", "purchase", PARAMS)
+    engine.propose(org_id, session.session_id, agent.agent_id, "shopping_api", "purchase", PARAMS)
     approval = engine.store.list_approvals(org_id)[0]
     approval.expires_at = utcnow() - timedelta(seconds=1)
     engine.store.save_approval(approval)
@@ -64,7 +65,7 @@ def test_expired_approval_request(engine, org_ctx):
 def test_grant_cannot_be_reused_for_different_action(engine, org_ctx):
     org_id, principal_id = org_ctx.org.org_id, org_ctx.principal.principal_id
     agent, session = _escalating_session(engine, org_id, principal_id)
-    d = engine.propose(org_id, session.session_id, agent.agent_id, "shopping_api", "purchase", PARAMS)
+    engine.propose(org_id, session.session_id, agent.agent_id, "shopping_api", "purchase", PARAMS)
     approval = engine.store.list_approvals(org_id)[0]
     engine.grant_approval(org_id, approval.approval_id, "human-owner")
     tampered = {**PARAMS, "quantity": 11}

@@ -161,7 +161,7 @@ def test_tenant_isolation_over_http(api):
 
 
 def test_audit_verify_and_metrics_over_http(api):
-    intent = api.client.post("/api/v1/intents", json={"text": INTENT_TEXT}).json()
+    _resp = api.client.post("/api/v1/intents", json={"text": INTENT_TEXT}).json()
     events = api.client.get("/api/v1/audit").json()["events"]
     assert len(events) >= 2
     verdict = api.client.post("/api/v1/audit/verify").json()

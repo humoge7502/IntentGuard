@@ -49,7 +49,9 @@ def test_deletion_is_detected(org_ctx):
 def test_signed_chain_roundtrip():
     from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
     from cryptography.hazmat.primitives.serialization import (
-        Encoding, NoEncryption, PrivateFormat,
+        Encoding,
+        NoEncryption,
+        PrivateFormat,
     )
     key = Ed25519PrivateKey.generate()
     key_b64 = base64.b64encode(

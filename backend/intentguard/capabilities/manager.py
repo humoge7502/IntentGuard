@@ -13,13 +13,9 @@ from datetime import timedelta
 from intentguard.core.enums import CapabilityStatus
 from intentguard.core.errors import ValidationError
 from intentguard.core.schemas import (
-    AmountLimit,
-    BrandAllow,
     Capability,
     CapabilityScope,
-    DestinationAllow,
     IntentSpec,
-    QuantityMax,
     utcnow,
 )
 from intentguard.tools.base import ToolRegistry

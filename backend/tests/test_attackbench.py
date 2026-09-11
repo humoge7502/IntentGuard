@@ -1,7 +1,6 @@
 """AttackBench regression gate: detection must stay high, false positives low.
 These thresholds are the project's security regression floor."""
 from intentguard.attackbench.runner import run_benchmark
-
 from tests.conftest import INTENT_TEXT  # noqa: F401
 
 

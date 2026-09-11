@@ -29,13 +29,13 @@ from sqlalchemy.pool import StaticPool
 
 from intentguard.core.enums import ApprovalStatus
 from intentguard.core.schemas import (
-    DecisionRecord,
     AgentIdentity,
     AgentSession,
     ApiKeyRecord,
     ApprovalRequest,
     AuditEvent,
     Capability,
+    DecisionRecord,
     IntentSpec,
     Observation,
     Organization,
@@ -604,6 +604,21 @@ class SqlStore(IntentGuardStore):
             .where(_t_approvals.c.action_digest == action_digest)
             .where(_t_approvals.c.status == ApprovalStatus.GRANTED.value)
             .order_by(_t_approvals.c.requested_at.desc())
+        )
+        _, columns = _SCHEMA[_t_approvals]
+        with self.engine.connect() as conn:
+            row = conn.execute(stmt).first()
+        return self._model_from_row(ApprovalRequest, row, columns) if row else None
+
+    def find_pending_for_digest(self, org_id: str, session_id: str, action_digest: str) -> ApprovalRequest | None:
+        stmt = (
+            select(_t_approvals)
+            .where(_t_approvals.c.org_id == org_id)
+            .where(_t_approvals.c.session_id == session_id)
+            .where(_t_approvals.c.action_digest == action_digest)
+            .where(_t_approvals.c.status == ApprovalStatus.PENDING.value)
+            .order_by(_t_approvals.c.requested_at.desc())
+            .limit(1)
         )
         _, columns = _SCHEMA[_t_approvals]
         with self.engine.connect() as conn:

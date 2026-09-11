@@ -8,13 +8,13 @@ from typing import Any
 
 from intentguard.core.enums import ApprovalStatus
 from intentguard.core.schemas import (
-    DecisionRecord,
     AgentIdentity,
     AgentSession,
     ApiKeyRecord,
     ApprovalRequest,
     AuditEvent,
     Capability,
+    DecisionRecord,
     IntentSpec,
     Observation,
     Organization,
@@ -136,6 +136,11 @@ class IntentGuardStore(ABC):
         self, org_id: str, session_id: str, action_digest: str
     ) -> ApprovalRequest | None: ...
 
+    @abstractmethod
+    def find_pending_for_digest(
+        self, org_id: str, session_id: str, action_digest: str
+    ) -> ApprovalRequest | None: ...
+
     # --- trajectory ------------------------------------------------------------------------
     @abstractmethod
     def append_trajectory_step(self, step: TrajectoryStep) -> None: ...
@@ -157,10 +162,10 @@ class IntentGuardStore(ABC):
 
 
     @abstractmethod
-    def append_observation(self, org_id: str, session_id: str, observation: "Observation") -> None: ...
+    def append_observation(self, org_id: str, session_id: str, observation: Observation) -> None: ...
 
     @abstractmethod
-    def list_observations(self, org_id: str, session_id: str) -> list["Observation"]: ...
+    def list_observations(self, org_id: str, session_id: str) -> list[Observation]: ...
 
     @abstractmethod
     def session_observation_count(self, org_id: str, session_id: str) -> int: ...

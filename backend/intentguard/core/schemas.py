@@ -2,9 +2,9 @@
 agents, tools, or HTTP is validated at the boundary (§66)."""
 from __future__ import annotations
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from decimal import Decimal
-from typing import Annotated, Any, Literal, Optional, Union
+from typing import Annotated, Any, Literal
 
 from pydantic import BaseModel, ConfigDict, Field
 
@@ -21,7 +21,7 @@ from intentguard.core.ids import new_id
 
 
 def utcnow() -> datetime:
-    return datetime.now(timezone.utc)
+    return datetime.now(UTC)
 
 
 class IGBaseModel(BaseModel):
@@ -74,15 +74,7 @@ class ApprovalRequirement(IGBaseModel):
 
 
 Constraint = Annotated[
-    Union[
-        AmountLimit,
-        BrandAllow,
-        DestinationAllow,
-        QuantityMax,
-        TimeWindow,
-        DataAccessScope,
-        ApprovalRequirement,
-    ],
+    AmountLimit | BrandAllow | DestinationAllow | QuantityMax | TimeWindow | DataAccessScope | ApprovalRequirement,
     Field(discriminator="kind"),
 ]
 
@@ -391,4 +383,4 @@ class ApiKeyRecord(IGBaseModel):
     created_at: datetime = Field(default_factory=utcnow)
 
 
-OptionalDatetime = Optional[datetime]
+

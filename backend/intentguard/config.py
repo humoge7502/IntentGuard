@@ -24,7 +24,7 @@ class Settings:
     bootstrap_admin: bool = True
 
     @classmethod
-    def from_env(cls, env: dict[str, str] | None = None) -> "Settings":
+    def from_env(cls, env: dict[str, str] | None = None) -> Settings:
         e = dict(env if env is not None else os.environ)
 
         def get(name: str, default: str = "") -> str:

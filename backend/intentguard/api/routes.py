@@ -6,7 +6,6 @@ import asyncio
 import json
 import queue as queue_mod
 from decimal import Decimal
-from typing import Any
 
 from fastapi import APIRouter, Depends, Request
 from fastapi.responses import StreamingResponse
@@ -23,8 +22,8 @@ from intentguard.api.schemas import (
     RevokeRequest,
     SessionCreate,
 )
-from intentguard.core.enums import ApprovalStatus, StoreKind
-from intentguard.core.errors import NotFoundError, ValidationError
+from intentguard.core.enums import ApprovalStatus
+from intentguard.core.errors import NotFoundError
 from intentguard.core.schemas import Observation, PolicyRule
 
 router = APIRouter(prefix="/api/v1")
@@ -260,7 +259,7 @@ def run_benchmark(body: BenchmarkRun, request: Request, auth: AuthContext = Depe
 
 @router.get("/events/stream")
 async def event_stream(request: Request, api_key: str | None = None):
-    auth = resolve_auth(request, query_key=api_key)
+    resolve_auth(request, query_key=api_key)
     engine = engine_of(request)
     q = engine.events.subscribe()
 

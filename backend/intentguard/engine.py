@@ -7,6 +7,8 @@ audit/trajectory inspection.
 """
 from __future__ import annotations
 
+import hashlib
+import secrets
 from typing import Any
 
 from intentguard.approvals.service import ApprovalService
@@ -26,18 +28,15 @@ from intentguard.core.schemas import (
     Principal,
 )
 from intentguard.firewall.bus import EventBus
-from intentguard.firewall.pipeline import EXTERNAL_CONTENT_TOOLS, ActionFirewall
+from intentguard.firewall.pipeline import ActionFirewall
 from intentguard.intents.compiler import RuleBasedIntentCompiler
 from intentguard.intents.graph import build_intent_graph
 from intentguard.policy.engine import PolicyEngine
 from intentguard.risk.engine import RiskEngine
 from intentguard.storage.store import IntentGuardStore
-from intentguard.tools.base import ExecutionContext, ToolRegistry, ToolResult
 from intentguard.tools import default_registry
+from intentguard.tools.base import ExecutionContext, ToolRegistry, ToolResult
 from intentguard.trajectory.analysis import TrajectoryAnalyzer
-
-import hashlib
-import secrets
 
 
 class IntentGuardEngine:

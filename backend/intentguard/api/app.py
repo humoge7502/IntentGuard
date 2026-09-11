@@ -13,6 +13,7 @@ from fastapi.staticfiles import StaticFiles
 
 from intentguard.api.routes import router
 from intentguard.config import Settings
+from intentguard.core.enums import StoreKind
 from intentguard.core.errors import (
     ConflictError,
     IntentGuardError,
@@ -127,7 +128,8 @@ def create_app(engine: IntentGuardEngine | None = None, settings: Settings | Non
         )
 
     # control-plane dashboard (no build step; served statically)
-    frontend_dir = Path(__file__).resolve().parents[2] / "frontend"
+    # app.py = <root>/backend/intentguard/api/app.py → repo root is parents[3]
+    frontend_dir = Path(__file__).resolve().parents[3] / "frontend"
     if frontend_dir.exists():
         app.mount("/app", StaticFiles(directory=str(frontend_dir), html=True), name="frontend")
 

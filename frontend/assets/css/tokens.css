@@ -1,0 +1,63 @@
+/* IntentGuard design tokens — derived from docs/DESIGN_RESEARCH.md.
+   Canvas/semantics verified WCAG AA on their intended pairings. */
+:root {
+  /* canvas & surfaces */
+  --canvas: #0B0F17;
+  --surface-1: #121826;
+  --surface-2: #182031;
+  --surface-3: #1F2940;
+  --border: #232D42;
+  --border-strong: #31405F;
+
+  /* text tiers */
+  --text-1: #E8EDF6;
+  --text-2: #A9B4C7;
+  --text-3: #7C889D;
+
+  /* accent & semantics */
+  --accent: #5B9BFF;
+  --accent-dim: rgba(91, 155, 255, 0.14);
+  --allow: #3ECF8E;
+  --allow-dim: rgba(62, 207, 142, 0.12);
+  --block: #FF6B5E;
+  --block-dim: rgba(255, 107, 94, 0.12);
+  --escalate: #E8B75A;
+  --escalate-dim: rgba(232, 183, 90, 0.12);
+
+  /* risk ramp */
+  --risk-low: #3ECF8E;
+  --risk-moderate: #E8B75A;
+  --risk-high: #FF9E5E;
+  --risk-critical: #FF6B5E;
+
+  /* type */
+  --font-ui: "Inter", -apple-system, "Segoe UI", Roboto, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, "Cascadia Code", Consolas, monospace;
+
+  --fs-11: 11px;
+  --fs-12: 12px;
+  --fs-13: 13px;
+  --fs-14: 14px;
+  --fs-16: 16px;
+  --fs-20: 20px;
+  --fs-28: 28px;
+
+  /* spacing scale */
+  --sp-1: 4px;
+  --sp-2: 8px;
+  --sp-3: 12px;
+  --sp-4: 16px;
+  --sp-5: 24px;
+  --sp-6: 32px;
+  --sp-7: 48px;
+
+  /* radii & borders */
+  --r-sm: 4px;
+  --r-md: 8px;
+  --r-lg: 12px;
+
+  /* motion */
+  --t-fast: 120ms;
+  --t-med: 180ms;
+  --ease: cubic-bezier(0.2, 0, 0, 1);
+}

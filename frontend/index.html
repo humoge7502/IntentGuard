@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="color-scheme" content="dark" />
+  <title>IntentGuard — Agent Security Control Plane</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/app/assets/css/tokens.css" />
+  <link rel="stylesheet" href="/app/assets/css/main.css" />
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'><path fill='%235B9BFF' d='M12 2l8 3v6c0 5-3.4 9.4-8 11-4.6-1.6-8-6-8-11V5l8-3z'/></svg>" />
+</head>
+<body>
+  <a class="skip-link" href="#main">Skip to content</a>
+
+  <div class="app-shell">
+    <aside class="sidebar" id="sidebar">
+      <div class="brand">
+        <svg class="brand-mark" viewBox="0 0 24 24" aria-hidden="true">
+          <path class="brand-shield" d="M12 2l8 3v6c0 5-3.4 9.4-8 11-4.6-1.6-8-6-8-11V5l8-3z"/>
+          <path class="brand-check" d="M8.5 12.2l2.4 2.4 4.6-5.2"/>
+        </svg>
+        <div class="brand-name">IntentGuard</div>
+        <div class="brand-sub">agent security control plane</div>
+      </div>
+
+      <nav class="nav" aria-label="Primary">
+        <div class="nav-group">
+          <div class="nav-heading">Operate</div>
+          <a href="#/overview" data-nav="overview" class="nav-item">
+            <span class="nav-icon" aria-hidden="true">◈</span> Overview
+          </a>
+          <a href="#/firewall" data-nav="firewall" class="nav-item">
+            <span class="nav-icon" aria-hidden="true">⚡</span> Action Firewall
+            <span class="nav-live" id="nav-live" hidden>LIVE</span>
+          </a>
+          <a href="#/approvals" data-nav="approvals" class="nav-item">
+            <span class="nav-icon" aria-hidden="true">⏸</span> Approvals
+            <span class="nav-count" id="nav-approvals" hidden></span>
+          </a>
+        </div>
+
+        <div class="nav-group">
+          <div class="nav-heading">Authorize</div>
+          <a href="#/intents" data-nav="intents" class="nav-item">
+            <span class="nav-icon" aria-hidden="true">◎</span> Intents
+          </a>
+          <a href="#/policies" data-nav="policies" class="nav-item">
+            <span class="nav-icon" aria-hidden="true">≡</span> Policies
+          </a>
+          <a href="#/capabilities" data-nav="capabilities" class="nav-item">
+            <span class="nav-icon" aria-hidden="true">⬡</span> Capabilities
+          </a>
+          <a href="#/sessions" data-nav="sessions" class="nav-item">
+            <span class="nav-icon" aria-hidden="true">⌁</span> Trajectories
+          </a>
+        </div>
+
+        <div class="nav-group">
+          <div class="nav-heading">Assure</div>
+          <a href="#/attackbench" data-nav="attackbench" class="nav-item">
+            <span class="nav-icon" aria-hidden="true">⊘</span> AttackBench
+          </a>
+          <a href="#/demo" data-nav="demo" class="nav-item">
+            <span class="nav-icon" aria-hidden="true">▷</span> Demos
+          </a>
+          <a href="#/audit" data-nav="audit" class="nav-item">
+            <span class="nav-icon" aria-hidden="true">⛓</span> Audit
+          </a>
+          <a href="#/settings" data-nav="settings" class="nav-item">
+            <span class="nav-icon" aria-hidden="true">⚙</span> Settings
+          </a>
+        </div>
+      </nav>
+
+      <div class="sidebar-foot">
+        <div class="conn" id="conn-status" role="status">
+          <span class="conn-dot" aria-hidden="true"></span>
+          <span id="conn-text">not connected</span>
+        </div>
+      </div>
+    </aside>
+
+    <main class="main" id="main" tabindex="-1">
+      <header class="topbar">
+        <div class="topbar-title">
+          <h1 id="page-title">Overview</h1>
+          <p id="page-sub" class="topbar-sub"></p>
+        </div>
+        <button class="btn btn-ghost" id="key-btn" type="button">API key</button>
+      </header>
+      <div id="outlet" class="outlet" aria-live="polite"></div>
+    </main>
+  </div>
+
+  <div class="modal-backdrop" id="key-modal" hidden>
+    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="key-modal-title">
+      <h2 id="key-modal-title">Connect to IntentGuard</h2>
+      <p class="modal-text">
+        Paste an IntentGuard API key. The bootstrap admin key is printed once when the
+        server first starts. The key stays in this browser tab's session storage.
+      </p>
+      <form id="key-form">
+        <label class="field-label" for="key-input">API key</label>
+        <input class="input mono" id="key-input" type="password" autocomplete="off"
+               placeholder="ig_…" spellcheck="false" />
+        <div class="modal-error" id="key-error" role="alert" hidden></div>
+        <div class="modal-actions">
+          <button class="btn btn-primary" type="submit">Connect</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <div class="toasts" id="toasts" aria-live="assertive"></div>
+
+  <script type="module" src="/app/assets/js/app.js"></script>
+</body>
+</html>

@@ -182,6 +182,23 @@ class IntentGuardEngine:
         )
         return session
 
+    def close_session(self, org_id: str, session_id: str) -> AgentSession:
+        """Explicitly terminate a session. Further proposals are rejected with
+        SESSION_CLOSED; history remains for audit and replay."""
+        session = self.store.get_session(org_id, session_id)
+        if session is None:
+            raise NotFoundError(f"session not found: {session_id}")
+        if session.status == "closed":
+            return session
+        session.status = "closed"
+        self.store.save_session(session)
+        self.audit.append(
+            org_id,
+            "session.closed",
+            {"session_id": session_id, "agent_id": session.agent_id},
+        )
+        return session
+
     # ------------------------------------------------------------------ #
     # Firewall                                                            #
     # ------------------------------------------------------------------ #

@@ -51,7 +51,7 @@ Legend: ✅ implemented + tested · ◐ partially implemented · ⬜ not started
 - R7.2 Multi-tenancy with enforced isolation ✅
 - R7.3 Rate limiting ✅ (in-memory; Redis ⬜)
 - R7.4 SSE live decision stream ✅
-- R7.5 PostgreSQL support ✅ (same schema; migrations via Alembic ⬜ — create_all for MVP)
+- R7.5 PostgreSQL support + Alembic migrations ✅ (roundtrip-tested)
 - R7.6 Docker packaging ✅ (image defined; local daemon verification below)
 - R7.7 CI pipeline ✅ (GitHub Actions: lint, tests, AttackBench gate, latency smoke, audit, docker build)
 

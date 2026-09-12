@@ -40,6 +40,27 @@ Done in-repo:
 - [x] Container image + compose + healthcheck
 - [x] Key hashing, role model, tenant scoping, rate limiting, security headers
 - [x] Audit chain with optional Ed25519 signing
+- [x] Input-size caps (params ≤ 32 KiB serialized, ≤ 20 context observations)
+- [x] Alembic migrations (upgrade/downgrade tested; see below)
+
+## Database migrations (Alembic)
+
+```bash
+cd backend
+# target DB resolved from INTENTGUARD_MIGRATION_DB > INTENTGUARD_DATABASE_URL
+# > INTENTGUARD_SQLITE_PATH (see alembic/env.py)
+.venv/Scripts/python -m alembic upgrade head
+```
+
+- `alembic upgrade head` creates the full schema on a fresh database
+  (roundtrip-tested in `tests/test_migrations.py`).
+- Existing databases created by the older `create_all` bootstrap: run
+  `alembic stamp head` once to mark the baseline — the schema is identical.
+- After changing models in `intentguard/storage/sql.py`, generate a revision
+  with `alembic revision --autogenerate -m "..."`, review it, commit it.
+- `SqlStore` still runs `create_all` for in-memory/test stores; for file and
+  PostgreSQL deployments prefer `alembic upgrade head` at deploy time and
+  `INTENTGUARD_BOOTSTRAP_ADMIN=0` after first boot.
 
 Required before real production use (not automated here):
 - [ ] TLS termination (reverse proxy: Caddy/Traefik/nginx) — the app serves plain HTTP

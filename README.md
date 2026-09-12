@@ -87,7 +87,7 @@ In the dashboard: **Demos** runs the full attack narrative in the UI,
 | Independent audit | ✅ round 2 | 6 defects found & fixed with regression tests — docs/AUDIT.md |
 | AttackBench | ✅ | 23 families / 208+ scenarios; regression-gated in CI |
 | Mock tools | ✅ | shopping/banking/email/web/file/A2A-inbox — all sandboxed |
-| Tests | ✅ 76 passing | unit, integration, security, tenant isolation, adversarial, concurrency-race |
+| Tests | ✅ 81 passing | unit, integration, security, tenant isolation, adversarial, concurrency-race, real-server E2E, migrations |
 | Real integrations (MCP/A2A/GitHub/…) | 🚫 not started | adapter architecture researched; see docs/INTEGRATIONS_RESEARCH.md |
 
 Honesty labels: everything above marked ✅ is verified by tests in this repo.

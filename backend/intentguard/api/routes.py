@@ -23,7 +23,7 @@ from intentguard.api.schemas import (
     SessionCreate,
 )
 from intentguard.core.enums import ApprovalStatus
-from intentguard.core.errors import NotFoundError, PermissionDeniedError
+from intentguard.core.errors import NotFoundError, PermissionDeniedError, ValidationError
 from intentguard.core.schemas import Observation, PolicyRule
 
 router = APIRouter(prefix="/api/v1")
@@ -112,13 +112,35 @@ def get_session(session_id: str, request: Request, auth: AuthContext = Depends(g
     return engine_of(request).session_view(auth.org_id, session_id)
 
 
+@router.post("/sessions/{session_id}/close")
+def close_session(session_id: str, request: Request, auth: AuthContext = Depends(get_agent_role)):
+    """Terminate a session: the firewall rejects further actions with
+    SESSION_CLOSED. Trajectory and decisions remain for audit and replay."""
+    return engine_of(request).close_session(auth.org_id, session_id).model_dump(mode="json")
+
+
 # --------------------------------------------------------------------- #
 # firewall                                                               #
 # --------------------------------------------------------------------- #
 
 
+# hard input-size caps: agent-controlled payloads must not become a
+# memory/storage amplifier through decision records and the audit chain
+MAX_PARAMS_JSON_BYTES = 32_768
+MAX_CONTEXT_OBSERVATIONS = 20
+
+
 @router.post("/firewall/evaluate")
 def evaluate(body: EvaluateRequest, request: Request, auth: AuthContext = Depends(get_agent_role)):
+    params_json = json.dumps(body.params, default=str)
+    if len(params_json.encode("utf-8")) > MAX_PARAMS_JSON_BYTES:
+        raise ValidationError(
+            f"params exceed {MAX_PARAMS_JSON_BYTES} bytes when serialized"
+        )
+    if len(body.context) > MAX_CONTEXT_OBSERVATIONS:
+        raise ValidationError(
+            f"context may contain at most {MAX_CONTEXT_OBSERVATIONS} observations"
+        )
     context = [Observation.model_validate(o) for o in body.context]
     decision = engine_of(request).propose(
         org_id=auth.org_id,

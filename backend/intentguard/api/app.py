@@ -127,10 +127,15 @@ class RequestContextMiddleware:
             if message["type"] == "http.response.start":
                 headers = list(message.get("headers", []))
                 headers.append((b"x-request-id", request_id.encode()))
+                # API responses must never be cached (decision data); public
+                # assets set their own cache headers.
+                if not path.startswith("/api/"):
+                    headers.append((b"cache-control", b"no-store"))
                 for header, value in SECURITY_HEADERS.items():
-                    key = header.encode()
-                    if not any(k == key for k, _ in headers):
-                        headers.append((key, value.encode()))
+                    if not (header == "Cache-Control" and path.startswith("/api/")):
+                        key = header.encode()
+                        if not any(k == key for k, _ in headers):
+                            headers.append((key, value.encode()))
                 message = {**message, "headers": headers}
             await send(message)
 
@@ -254,6 +259,18 @@ def create_app(engine: IntentGuardEngine | None = None, settings: Settings | Non
     frontend_dir = Path(__file__).resolve().parents[3] / "frontend"
     if frontend_dir.exists():
         app.mount("/app", StaticFiles(directory=str(frontend_dir), html=True), name="frontend")
+        # shared design assets for the public landing page
+        app.mount("/assets", StaticFiles(directory=str(frontend_dir / "assets")), name="assets")
+
+        landing = frontend_dir / "landing.html"
+
+        @app.get("/", include_in_schema=False)
+        def public_landing():
+            from fastapi.responses import FileResponse
+
+            response = FileResponse(landing, media_type="text/html")
+            response.headers["Cache-Control"] = "public, max-age=300"
+            return response
 
     return app
 

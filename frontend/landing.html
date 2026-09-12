@@ -1,0 +1,329 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="color-scheme" content="dark" />
+  <title>IntentGuard — LLMs propose. IntentGuard decides.</title>
+  <meta name="description" content="IntentGuard is a runtime authorization and security control plane for autonomous AI agents: every consequential action is checked against the human's compiled intent, scoped capabilities, policy, context and trajectory — before it executes." />
+  <link rel="canonical" href="/" />
+  <meta property="og:type" content="website" />
+  <meta property="og:title" content="IntentGuard — LLMs propose. IntentGuard decides." />
+  <meta property="og:description" content="An independent, deterministic firewall authorizes every autonomous-agent action against the authority the human actually granted. 208-scenario adversarial benchmark included." />
+  <meta name="twitter:card" content="summary" />
+  <meta name="twitter:title" content="IntentGuard — LLMs propose. IntentGuard decides." />
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "SoftwareApplication",
+    "name": "IntentGuard",
+    "applicationCategory": "DeveloperApplication",
+    "operatingSystem": "Linux, Windows, macOS",
+    "description": "Runtime authorization and security control plane for autonomous AI agents.",
+    "license": "https://opensource.org/licenses/MIT"
+  }
+  </script>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/assets/css/tokens.css" />
+  <link rel="stylesheet" href="/assets/css/main.css" />
+  <link rel="stylesheet" href="/assets/css/landing.css" />
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'><path fill='%235B9BFF' d='M12 2l8 3v6c0 5-3.4 9.4-8 11-4.6-1.6-8-6-8-11V5l8-3z'/></svg>" />
+</head>
+<body class="landing">
+  <a class="skip-link" href="#main">Skip to content</a>
+
+  <header class="land-nav">
+    <a class="land-brand" href="/" aria-label="IntentGuard home">
+      <svg class="brand-mark" viewBox="0 0 24 24" aria-hidden="true">
+        <path class="brand-shield" d="M12 2l8 3v6c0 5-3.4 9.4-8 11-4.6-1.6-8-6-8-11V5l8-3z"/>
+        <path class="brand-check" d="M8.5 12.2l2.4 2.4 4.6-5.2"/>
+      </svg>
+      <span>IntentGuard</span>
+    </a>
+    <nav class="land-links" aria-label="Page sections">
+      <a href="#mechanism">Mechanism</a>
+      <a href="#attack">Attack demo</a>
+      <a href="#proof">Proof</a>
+      <a href="#limits">Limits</a>
+      <a href="#quickstart">Quick start</a>
+    </nav>
+    <div class="land-cta">
+      <a class="btn btn-ghost" href="https://github.com/humoge7502/IntentGuard" target="_blank" rel="noopener">GitHub</a>
+      <a class="btn btn-primary" href="/app/">Open console <span aria-hidden="true">→</span></a>
+    </div>
+  </header>
+
+  <main id="main">
+    <!-- 01 · HERO -->
+    <section class="hero" aria-labelledby="hero-title">
+      <p class="eyebrow mono-eyebrow">01 · Runtime authorization for autonomous AI agents · v0.1.0</p>
+      <div class="hero-grid">
+        <div class="hero-copy">
+          <h1 id="hero-title" class="hero-title">
+            <span class="hero-line">LLMs propose.</span>
+            <span class="hero-line hero-accent">IntentGuard decides.</span>
+          </h1>
+          <p class="hero-sub">
+            An autonomous agent should never execute an externally consequential
+            action merely because the model decided it looked reasonable.
+            IntentGuard checks every action against the human's compiled intent,
+            scoped capabilities, policy, execution context and accumulated
+            trajectory — <strong>before the side effect occurs.</strong>
+          </p>
+          <div class="hero-actions">
+            <a class="btn btn-primary btn-lg" href="/app/">Open the live console</a>
+            <a class="btn btn-lg btn-outline" href="#attack">Watch it block an attack</a>
+          </div>
+          <p class="hero-meta mono-eyebrow">MIT licensed · zero-build frontend · Python 3.11+ · no LLM in the enforcement path</p>
+        </div>
+        <div class="hero-stream" aria-label="Simulated firewall decision stream">
+          <div class="stream-frame">
+            <div class="stream-frame-head mono-eyebrow">
+              <span>firewall.decisions — simulated replay</span>
+              <span class="live-dot" aria-hidden="true"></span>
+            </div>
+            <div class="stream-frame-body" id="hero-stream" aria-live="off"></div>
+          </div>
+          <p class="stream-note mono-eyebrow">Simulated replay of a sandboxed demo · run it yourself in the console → Demos</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- 02 · PROBLEM -->
+    <section class="land-section" id="problem" aria-labelledby="problem-title">
+      <p class="eyebrow mono-eyebrow">02 · The problem</p>
+      <div class="land-split">
+        <div>
+          <h2 id="problem-title" class="land-h2">Autonomy is arriving faster than authority.</h2>
+          <p class="land-lead">
+            Agents now browse, purchase, email, deploy and pay. Prompt injection
+            turns their tool access into someone else's API. The failure is never
+            one obvious action — it is a sequence of individually plausible steps
+            that compose into something nobody authorized.
+          </p>
+        </div>
+        <ol class="failures">
+          <li class="failure">
+            <span class="failure-num mono-eyebrow">F-01</span>
+            <h3>Indirect prompt injection</h3>
+            <p>A webpage the agent read instructs it to redirect a purchase: different product, 7.5× the budget, wrong city.</p>
+          </li>
+          <li class="failure">
+            <span class="failure-num mono-eyebrow">F-02</span>
+            <h3>Credential harvest trajectories</h3>
+            <p>Read a phishing page, then reach for the mail channel. Each step looks legitimate; the sequence is the attack.</p>
+          </li>
+          <li class="failure">
+            <span class="failure-num mono-eyebrow">F-03</span>
+            <h3>Excessive agency</h3>
+            <p>The tool exists, the permission looks broad enough, and nothing binds the action to what the human actually asked for.</p>
+          </li>
+        </ol>
+      </div>
+    </section>
+
+    <!-- 03 · MECHANISM -->
+    <section class="land-section land-tinted" id="mechanism" aria-labelledby="mechanism-title">
+      <p class="eyebrow mono-eyebrow">03 · The mechanism</p>
+      <div class="land-split">
+        <div>
+          <h2 id="mechanism-title" class="land-h2">The model is never the judge.</h2>
+          <p class="land-lead">
+            A natural-language goal is compiled into a versioned intent — budget,
+            brands, destinations, quantities, approval gates. Capabilities are
+            minted from intent ∩ policy, strictly least-privilege. Then every
+            proposed action passes an eleven-stage deterministic pipeline.
+          </p>
+          <p class="land-lead">
+            The enforcement path contains no LLM, no heuristics that can be
+            talked into anything, and no network calls. Uncertainty escalates
+            to a human — bound to one exact action digest, single-use.
+          </p>
+        </div>
+        <div class="pipeline" role="list" aria-label="Firewall check pipeline">
+          <div class="pipeline-track" role="listitem">
+            <span class="pipe-step mono-eyebrow">identity</span>
+            <span class="pipe-step mono-eyebrow">capability</span>
+            <span class="pipe-step mono-eyebrow">tool</span>
+            <span class="pipe-step mono-eyebrow">operation</span>
+            <span class="pipe-step mono-eyebrow">parameters</span>
+            <span class="pipe-step mono-eyebrow">policy</span>
+            <span class="pipe-step mono-eyebrow">intent alignment</span>
+            <span class="pipe-step mono-eyebrow">context / taint</span>
+            <span class="pipe-step mono-eyebrow">trajectory</span>
+            <span class="pipe-step mono-eyebrow">risk</span>
+            <span class="pipe-step pipe-final mono-eyebrow">decide</span>
+          </div>
+          <div class="pipeline-outcomes">
+            <div class="outcome o-allow"><span class="badge badge-allow">ALLOW</span><p>Within intent, capability, policy, context and trajectory — executes once, audited.</p></div>
+            <div class="outcome o-block"><span class="badge badge-block">BLOCK</span><p>Hard violation — constraint, policy, identity, replay. Nothing executes.</p></div>
+            <div class="outcome o-esc"><span class="badge badge-escalate">ESCALATE</span><p>Uncertain or gated — a human approves this exact digest, or nothing happens.</p></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 04 · ATTACK DEMO -->
+    <section class="land-section" id="attack" aria-labelledby="attack-title">
+      <p class="eyebrow mono-eyebrow">04 · Attack demonstration · sandboxed</p>
+      <div class="land-split">
+        <div>
+          <h2 id="attack-title" class="land-h2">The ₹10 lakh laptop order that tried to become ₹75 lakh.</h2>
+          <p class="land-lead">
+            A human authorizes <strong>100 Lenovo laptops, ₹10,00,000 total,
+            delivered to Chennai</strong>. A malicious page tells the agent to
+            buy 500 Apple laptops for ₹75,00,000 shipped to Mumbai. Watch the
+            firewall's complete reasoning chain — this is a replay of
+            <code class="mono-inline">demo/intent_divergence</code>, reproducible
+            with one click in the console.
+          </p>
+          <a class="btn btn-outline" href="/app/#/demo">Run the demo live <span aria-hidden="true">→</span></a>
+        </div>
+        <div class="attack-timeline" role="list">
+          <div class="attack-step ok" role="listitem">
+            <span class="tl-dot" aria-hidden="true">✓</span>
+            <div><span class="attack-title mono">shopping_api.search_products</span><span class="badge badge-allow">ALLOW</span></div>
+          </div>
+          <div class="attack-step ok" role="listitem">
+            <span class="tl-dot" aria-hidden="true">✓</span>
+            <div><span class="attack-title mono">web_browser.fetch_page — vendor catalog</span><span class="badge badge-allow">ALLOW</span></div>
+          </div>
+          <div class="attack-step ok" role="listitem">
+            <span class="tl-dot" aria-hidden="true">✓</span>
+            <div><span class="attack-title mono">web_browser.fetch_page — "flash sale" (attacker)</span><span class="badge badge-allow">ALLOW</span></div>
+            <p class="attack-note">Reading is authorized. Obeying is not.</p>
+          </div>
+          <div class="attack-step bad" role="listitem">
+            <span class="tl-dot" aria-hidden="true">✗</span>
+            <div><span class="attack-title mono">shopping_api.purchase — 500 × Apple, ₹75,00,000, Mumbai</span><span class="badge badge-block">BLOCK</span></div>
+            <div class="reasons" aria-label="Block reasons">
+              <span class="reason">AMOUNT_LIMIT_EXCEEDED</span>
+              <span class="reason">QUANTITY_EXCEEDED</span>
+              <span class="reason">BRAND_NOT_ALLOWED</span>
+              <span class="reason">DESTINATION_NOT_ALLOWED</span>
+              <span class="reason">EXTERNAL_INSTRUCTION_TAINT</span>
+              <span class="reason">INTENT_DIVERGENCE</span>
+            </div>
+          </div>
+          <div class="authorized-vs">
+            <div><span class="mono-eyebrow">Authorized</span><p class="mono">100 × Lenovo · ≤ ₹10,00,000 · Chennai</p></div>
+            <div><span class="mono-eyebrow">Attempted</span><p class="mono">500 × Apple · ₹75,00,000 · Mumbai</p></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 05 · PROOF -->
+    <section class="land-section land-tinted" id="proof" aria-labelledby="proof-title">
+      <p class="eyebrow mono-eyebrow">05 · Proof, with the caveat attached</p>
+      <h2 id="proof-title" class="land-h2">An adversarial benchmark ships with the product.</h2>
+      <div class="proof-grid">
+        <div class="proof-stat"><span class="proof-num mono" data-count="208">0</span><span class="proof-label">sandboxed scenarios across 23 attack &amp; benign families</span></div>
+        <div class="proof-stat"><span class="proof-num mono" data-count="100" data-suffix="%">0%</span><span class="proof-label">of attacks stopped — current families, co-designed with the engine</span></div>
+        <div class="proof-stat"><span class="proof-num mono" data-count="0">0</span><span class="proof-label">false positives on benign workflows</span></div>
+        <div class="proof-stat"><span class="proof-num mono" data-count="7.5" data-suffix="ms">0ms</span><span class="proof-label">median decision latency, full persistence + audit included</span></div>
+      </div>
+      <p class="proof-caveat">
+        <strong>Honest interpretation:</strong> these families co-evolve with the
+        engine, so this is a regression floor — evidence the checks work as
+        designed — not a claim of universal safety. The red-team loop exists to
+        break this number, and CI enforces the floor so nothing silently
+        regresses. Every figure is a recorded run; reproduce it yourself:
+      </p>
+      <pre class="codeblock mono-eyebrow" id="bench-cmd">python -c "from intentguard.engine import IntentGuardEngine; from intentguard.storage.sql import SqlStore; from intentguard.attackbench.runner import run_benchmark; import json; print(json.dumps(run_benchmark(IntentGuardEngine(SqlStore('sqlite://')), 'bench'), indent=2)[:600])"</pre>
+    </section>
+
+    <!-- 06 · LIMITS -->
+    <section class="land-section" id="limits" aria-labelledby="limits-title">
+      <p class="eyebrow mono-eyebrow">06 · What it does not do</p>
+      <div class="land-split">
+        <div>
+          <h2 id="limits-title" class="land-h2">Trust a control plane that states its limits.</h2>
+          <p class="land-lead">
+            Most security pages list guarantees. This one lists the boundaries
+            first, because that is how the enforcement layer treats reality:
+            uncertainty escalates, nothing silently passes.
+          </p>
+        </div>
+        <ul class="limits">
+          <li><span class="mono-eyebrow">L-01</span><p><strong>Tamper-evident, not immutable.</strong> The audit chain detects any edit or deletion; an attacker who can rewrite the whole store needs external anchoring to be defeated (roadmap).</p></li>
+          <li><span class="mono-eyebrow">L-02</span><p><strong>Sandboxed tools only, today.</strong> All demo and benchmark tools are deterministic mocks — no real purchasing, email, or network. Real integrations land behind the same firewall contract.</p></li>
+          <li><span class="mono-eyebrow">L-03</span><p><strong>The compiler is deliberately narrow.</strong> It records ambiguity instead of guessing, and missing constraints on consequential actions escalate — imprecision can only make IntentGuard stricter, never looser.</p></li>
+          <li><span class="mono-eyebrow">L-04</span><p><strong>Single-process deployment.</strong> Rate limiting and live streams are in-memory; multi-replica needs Redis (documented).</p></li>
+        </ul>
+      </div>
+    </section>
+
+    <!-- 07 · QUICK START -->
+    <section class="land-section land-tinted" id="quickstart" aria-labelledby="qs-title">
+      <p class="eyebrow mono-eyebrow">07 · Quick start</p>
+      <div class="land-split">
+        <div>
+          <h2 id="qs-title" class="land-h2">From clone to blocked attack in five minutes.</h2>
+          <p class="land-lead">
+            No build step, no containers required, no API keys from anyone.
+            The bootstrap prints a one-time admin key; the console connects
+            with it; the Demos page blocks the attack above in your browser.
+          </p>
+          <div class="hero-actions">
+            <a class="btn btn-primary" href="https://github.com/humoge7502/IntentGuard" target="_blank" rel="noopener">Read the repository</a>
+            <a class="btn btn-outline" href="/app/">Open the console</a>
+          </div>
+        </div>
+        <div class="qs-code">
+          <div class="qs-head mono-eyebrow"><span>bash</span><button class="copy-btn" type="button" data-copy="#qs-block" aria-label="Copy quick start commands">copy</button></div>
+          <pre class="codeblock" id="qs-block">git clone https://github.com/humoge7502/IntentGuard
+cd IntentGuard/backend
+python -m venv .venv && .venv/Scripts/pip install -e ".[dev]"   # Windows
+# .venv/bin/pip install -e ".[dev]"                             # Linux / macOS
+
+.venv/Scripts/python -m pytest tests/        # 81 tests green
+.venv/Scripts/python -m uvicorn --factory intentguard.api.app:create_app --port 8400
+# → http://127.0.0.1:8400/app/  (paste the bootstrap admin key)</pre>
+        </div>
+      </div>
+    </section>
+
+    <!-- 08 · CLOSING -->
+    <section class="land-closing">
+      <h2 class="closing-title">Simple to understand.<br /><span class="hero-accent">Difficult to bypass.</span></h2>
+      <div class="hero-actions">
+        <a class="btn btn-primary btn-lg" href="/app/">Open the live console</a>
+        <a class="btn btn-lg btn-outline" href="https://github.com/humoge7502/IntentGuard" target="_blank" rel="noopener">Star on GitHub</a>
+      </div>
+    </section>
+  </main>
+
+  <footer class="land-footer">
+    <div class="footer-grid">
+      <div class="footer-brand">
+        <span class="land-brand"><svg class="brand-mark" viewBox="0 0 24 24" aria-hidden="true"><path class="brand-shield" d="M12 2l8 3v6c0 5-3.4 9.4-8 11-4.6-1.6-8-6-8-11V5l8-3z"/><path class="brand-check" d="M8.5 12.2l2.4 2.4 4.6-5.2"/></svg><span>IntentGuard</span></span>
+        <p class="footer-tag">Runtime authorization and security control plane for autonomous AI agents.</p>
+      </div>
+      <div class="footer-col">
+        <p class="mono-eyebrow">Product</p>
+        <a href="/app/">Console</a>
+        <a href="/app/#/demo">Demos</a>
+        <a href="/app/#/attackbench">AttackBench</a>
+      </div>
+      <div class="footer-col">
+        <p class="mono-eyebrow">Security</p>
+        <a href="https://github.com/humoge7502/IntentGuard/blob/main/docs/SECURITY_MODEL.md" target="_blank" rel="noopener">Security model</a>
+        <a href="https://github.com/humoge7502/IntentGuard/blob/main/docs/THREAT_MODEL.md" target="_blank" rel="noopener">Threat model</a>
+        <a href="https://github.com/humoge7502/IntentGuard/blob/main/SECURITY.md" target="_blank" rel="noopener">Report a vulnerability</a>
+      </div>
+      <div class="footer-col">
+        <p class="mono-eyebrow">Engineering</p>
+        <a href="https://github.com/humoge7502/IntentGuard" target="_blank" rel="noopener">GitHub</a>
+        <a href="https://github.com/humoge7502/IntentGuard/blob/main/docs/ARCHITECTURE.md" target="_blank" rel="noopener">Architecture</a>
+        <a href="https://github.com/humoge7502/IntentGuard/blob/main/docs/API.md" target="_blank" rel="noopener">API reference</a>
+      </div>
+    </div>
+    <p class="footer-legal mono-eyebrow">All tooling on this page is sandboxed · v0.1.0 · MIT © 2026 IntentGuard contributors</p>
+  </footer>
+
+  <script type="module" src="/assets/js/landing.js"></script>
+</body>
+</html>

@@ -17,14 +17,14 @@
 
   <div class="app-shell">
     <aside class="sidebar" id="sidebar">
-      <div class="brand">
+      <a class="brand" href="/" title="IntentGuard home" style="text-decoration:none;color:inherit;display:block;">
         <svg class="brand-mark" viewBox="0 0 24 24" aria-hidden="true">
           <path class="brand-shield" d="M12 2l8 3v6c0 5-3.4 9.4-8 11-4.6-1.6-8-6-8-11V5l8-3z"/>
           <path class="brand-check" d="M8.5 12.2l2.4 2.4 4.6-5.2"/>
         </svg>
         <div class="brand-name">IntentGuard</div>
         <div class="brand-sub">agent security control plane</div>
-      </div>
+      </a>
 
       <nav class="nav" aria-label="Primary">
         <div class="nav-group">
@@ -89,7 +89,12 @@
           <h1 id="page-title">Overview</h1>
           <p id="page-sub" class="topbar-sub"></p>
         </div>
-        <button class="btn btn-ghost" id="key-btn" type="button">API key</button>
+        <div style="display:flex;gap:8px;align-items:center;">
+          <button class="btn btn-ghost" id="palette-btn" type="button" title="Command palette (Ctrl+K)">
+            <span aria-hidden="true">⌘</span>K
+          </button>
+          <button class="btn btn-ghost" id="key-btn" type="button">API key</button>
+        </div>
       </header>
       <div id="outlet" class="outlet" aria-live="polite"></div>
     </main>
@@ -111,6 +116,17 @@
           <button class="btn btn-primary" type="submit">Connect</button>
         </div>
       </form>
+    </div>
+  </div>
+
+  <div class="modal-backdrop" id="palette" hidden>
+    <div class="palette" role="dialog" aria-modal="true" aria-label="Command palette">
+      <input class="input mono" id="palette-input" type="text" autocomplete="off"
+             placeholder="Type a command or page…" spellcheck="false"
+             aria-label="Search commands" role="combobox" aria-expanded="true"
+             aria-controls="palette-list" />
+      <div id="palette-list" class="palette-list" role="listbox" aria-label="Commands"></div>
+      <p class="palette-foot mono-eyebrow">↑↓ navigate · Enter run · Esc close</p>
     </div>
   </div>
 

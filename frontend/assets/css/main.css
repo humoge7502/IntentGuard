@@ -335,6 +335,31 @@ pre.codeblock {
 .page-enter { animation: page-in var(--t-med) var(--ease); }
 @keyframes page-in { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
 
+/* skeleton loaders */
+.skeleton {
+  background: linear-gradient(100deg, var(--surface-2) 40%, var(--surface-3) 50%, var(--surface-2) 60%);
+  background-size: 200% 100%;
+  animation: shimmer 1.4s linear infinite;
+}
+@keyframes shimmer { to { background-position: -200% 0; } }
+@media (prefers-reduced-motion: reduce) { .skeleton { animation: none; } }
+
+/* command palette */
+.palette {
+  width: min(560px, calc(100vw - 32px));
+  background: var(--surface-1); border: 1px solid var(--border-strong);
+  border-radius: var(--r-lg); padding: var(--sp-3);
+  box-shadow: 0 24px 64px rgba(0, 0, 0, 0.5);
+}
+.palette-list { margin-top: var(--sp-2); max-height: 320px; overflow-y: auto; }
+.palette-item {
+  display: flex; justify-content: space-between; align-items: center; gap: var(--sp-3);
+  padding: 9px 12px; border-radius: var(--r-md); font-size: 13px; color: var(--text-2);
+  cursor: pointer;
+}
+.palette-item.active { background: var(--accent-dim); color: var(--text-1); }
+.palette-foot { margin: var(--sp-2) var(--sp-1) 0; }
+
 /* responsive sidebar */
 @media (max-width: 860px) {
   .app-shell { flex-direction: column; }

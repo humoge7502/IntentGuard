@@ -54,12 +54,12 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
-      - name: Install pip-audit
-        run: pip install pip-audit
-      - name: Audit dependencies
+      - name: Install
         working-directory: backend
-        run: pip-audit -r <(pip freeze) || pip-audit --help >/dev/null
-        continue-on-error: false
+        run: pip install -e .
+      - name: Audit environment for known vulnerabilities
+        working-directory: backend
+        run: pip-audit
 
   docker:
     runs-on: ubuntu-latest

@@ -6,7 +6,6 @@ build-backend = "setuptools.build_meta"
 name = "intentguard"
 version = "0.1.0"
 description = "Runtime authorization and security control plane for autonomous AI agents"
-readme = "../README.md"
 requires-python = ">=3.11"
 license = { text = "MIT" }
 authors = [{ name = "IntentGuard contributors" }]

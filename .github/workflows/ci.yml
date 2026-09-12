@@ -57,6 +57,8 @@ jobs:
       - name: Install
         working-directory: backend
         run: pip install -e .
+      - name: Install pip-audit
+        run: pip install pip-audit
       - name: Audit environment for known vulnerabilities
         working-directory: backend
         run: pip-audit
